@@ -1,111 +1,98 @@
-# Efficient, Analyzed Ride-Sharing Simulator
+# Efficient Ride-Sharing Simulator
 
-This project is a Python-based ride-sharing simulation developed for the
-Introduction to Python and Algorithms course. It uses object-oriented design
-and custom data structures to model cars, riders, and a city road network.
+## Project Overview
 
-## Current Features
+This project models the core parts of a ride-sharing system using Python and
+object-oriented programming. Cars and map locations are represented as Python
+objects, while roads are stored in a weighted graph.
 
-- `Car` class for storing car identification, location, and availability
-- `Rider` class for storing pickup and destination information
-- `Graph` class implemented with an adjacency list
-- File-driven city map loaded from a CSV file
-- `Simulation` class that initializes and stores the city graph
-- Test script that verifies the map loads correctly
+## Pathfinding with Dijkstra's Algorithm
+
+The project uses Dijkstra's shortest-path algorithm to calculate the fastest
+route between two locations in the map.
+
+The algorithm uses Python's `heapq` module as a min-heap priority queue. Each
+heap entry is a tuple containing:
+
+```python
+(distance_from_start, node)
+```
+
+The node with the smallest known distance is processed first. A `distances`
+dictionary stores the best travel time found for each node, and a
+`predecessors` dictionary records which node came before each node in the
+optimal route. After reaching the destination, the predecessor information is
+used to reconstruct the complete path.
+
+Dijkstra's algorithm requires all edge weights to be non-negative.
+
+## Car Route Calculation
+
+The `Car` class includes this method:
+
+```python
+calculate_route(self, destination, graph)
+```
+
+The method starts at the car's current `self.location` and calculates the
+shortest route to the requested destination. It stores the result in:
+
+- `self.route`: the ordered list of map nodes in the route
+- `self.route_time`: the total travel time for the route
+
+When no route exists, `self.route` is set to `None` and `self.route_time` is
+set to `float("inf")`.
 
 ## Project Files
 
-```text
-assignment_3_2_graph_project/
-├── car.py
-├── graph.py
-├── map.csv
-├── README.md
-├── rider.py
-├── simulation.py
-└── test_graph.py
-```
-
-## Map Data Format
-
-The city map is stored in `map.csv`. Each row represents one directed road and
-contains three comma-separated values:
-
-```text
-start_node,end_node,travel_time
-```
-
-- `start_node` is the location where the road begins.
-- `end_node` is the location where the road ends.
-- `travel_time` is the integer number of minutes required to travel along the
-  road.
-
-Example:
-
-```text
-A,B,5
-B,A,5
-A,C,3
-```
-
-The graph is directed. A two-way street must therefore be represented by two
-separate rows. For example, `A,B,5` creates a road from A to B, while `B,A,5`
-creates the return road from B to A.
-
-## Graph Implementation
-
-The `Graph` class stores the map in an adjacency-list dictionary. Each key is a
-node, and its value is a list of `(neighbor, weight)` tuples.
-
-Example:
-
-```python
-{
-    "A": [("B", 5), ("C", 3)],
-    "B": [("A", 5), ("D", 4)]
-}
-```
-
-This structure is efficient for a sparse city map because it stores only roads
-that actually exist.
+- `graph.py` - weighted graph implementation and CSV map loader
+- `car.py` - Car class with integrated route calculation
+- `pathfinding.py` - standalone Dijkstra function
+- `map.csv` - sample weighted map
+- `test_dijkstra.py` - isolated test of the standalone function
+- `test_car_route.py` - demonstration of route calculation through a Car object
 
 ## How to Run
 
-1. Open the project folder in Codio, VS Code, or another Python editor.
-2. Make sure all files are in the same folder.
-3. Open a terminal in that folder.
-4. Run:
+Open a terminal in the project directory.
+
+Run the standalone pathfinding test:
 
 ```bash
-python test_graph.py
+python test_dijkstra.py
 ```
 
-On some computers, use:
+Run the integrated Car route test:
 
 ```bash
-python3 test_graph.py
+python test_car_route.py
 ```
 
-The program initializes the `Simulation` object, loads `map.csv`, and prints
-the graph's adjacency list.
-
-## Expected Output
+Expected integrated output includes:
 
 ```text
-Simulation initialized successfully.
-
-City Map Adjacency List:
-A -> B (5 min), C (3 min)
-B -> A (5 min), D (4 min), E (6 min)
-C -> A (3 min), D (1 min)
-D -> B (4 min), C (1 min), E (2 min)
-E -> B (6 min), D (2 min)
+Calculated route: ['A', 'C', 'B', 'D']
+Calculated route time: 4.0
+Car route test passed successfully.
 ```
 
 ## Complexity Analysis
 
-- Adding one edge takes approximately **O(1)** average time.
-- Loading a file containing E roads takes **O(E)** time.
-- The adjacency-list storage requirement is **O(V + E)**, where V is the
-  number of nodes and E is the number of directed roads.
-- Printing the complete graph takes **O(V + E)** time.
+Using an adjacency list and a binary min-heap, Dijkstra's algorithm has a time
+complexity of:
+
+```text
+O((V + E) log V)
+```
+
+This is often written as `O(E log V)` for a connected graph.
+
+Its additional space complexity is:
+
+```text
+O(V + E)
+```
+
+The graph requires space for vertices and edges, while the distance,
+predecessor, and priority queue structures require additional space based on
+the number of vertices and queued entries.

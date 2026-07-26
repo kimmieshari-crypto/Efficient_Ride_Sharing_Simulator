@@ -1,104 +1,62 @@
-"""Graph data structure for the ride-sharing simulator."""
-
 import csv
 
 
 class Graph:
-    """Represents a directed, weighted city map using an adjacency list."""
+    """Weighted, directed graph stored as an adjacency-list dictionary."""
 
     def __init__(self):
-        """Initialize an empty adjacency list."""
         self.adjacency_list = {}
 
-    def add_edge(self, start_node, end_node, weight):
-        """
-        Add a directed, weighted edge to the graph.
+    def add_node(self, node):
+        """Add a node if it does not already exist."""
+        if node not in self.adjacency_list:
+            self.adjacency_list[node] = []
 
-        Args:
-            start_node (str): The starting location.
-            end_node (str): The destination location.
-            weight (int): Travel time between the two locations.
-        """
-        if start_node not in self.adjacency_list:
-            self.adjacency_list[start_node] = []
+    def add_edge(self, start, end, weight):
+        """Add a directed, weighted edge from start to end."""
+        if weight < 0:
+            raise ValueError("Dijkstra's algorithm requires non-negative weights.")
 
-        self.adjacency_list[start_node].append((end_node, weight))
+        self.add_node(start)
+        self.add_node(end)
+        self.adjacency_list[start].append((end, float(weight)))
 
-        # Ensure destination-only nodes also appear in the graph.
-        if end_node not in self.adjacency_list:
-            self.adjacency_list[end_node] = []
+    def get_neighbors(self, node):
+        """Return a list of (neighbor, weight) tuples."""
+        return self.adjacency_list.get(node, [])
 
     def load_from_file(self, filename):
         """
-        Load directed roads from a CSV file.
+        Load edges from a CSV file.
 
-        Each nonblank row must contain:
+        Expected row format:
         start_node,end_node,travel_time
-
-        Args:
-            filename (str): Path to the CSV map file.
         """
-        self.adjacency_list.clear()
+        with open(filename, "r", newline="", encoding="utf-8") as csv_file:
+            reader = csv.reader(csv_file)
 
-        try:
-            with open(filename, "r", newline="", encoding="utf-8") as map_file:
-                reader = csv.reader(map_file)
+            for line_number, row in enumerate(reader, start=1):
+                if not row or all(not value.strip() for value in row):
+                    continue
 
-                for line_number, row in enumerate(reader, start=1):
-                    if not row or all(not value.strip() for value in row):
-                        continue
+                if len(row) != 3:
+                    raise ValueError(
+                        f"Invalid row {line_number}: expected 3 values, received {len(row)}."
+                    )
 
-                    if len(row) != 3:
-                        raise ValueError(
-                            f"Invalid map data on line {line_number}: "
-                            "expected 3 values."
-                        )
+                start, end, weight = (value.strip() for value in row)
 
-                    start_node = row[0].strip()
-                    end_node = row[1].strip()
+                try:
+                    numeric_weight = float(weight)
+                except ValueError as exc:
+                    raise ValueError(
+                        f"Invalid weight on row {line_number}: {weight!r}"
+                    ) from exc
 
-                    if not start_node or not end_node:
-                        raise ValueError(
-                            f"Invalid map data on line {line_number}: "
-                            "node names cannot be blank."
-                        )
-
-                    try:
-                        weight = int(row[2].strip())
-                    except ValueError as exc:
-                        raise ValueError(
-                            f"Invalid travel time on line {line_number}: "
-                            f"{row[2]!r} is not an integer."
-                        ) from exc
-
-                    if weight < 0:
-                        raise ValueError(
-                            f"Invalid travel time on line {line_number}: "
-                            "weight cannot be negative."
-                        )
-
-                    self.add_edge(start_node, end_node, weight)
-
-        except FileNotFoundError as exc:
-            raise FileNotFoundError(
-                f"Map file was not found: {filename}"
-            ) from exc
+                self.add_edge(start, end, numeric_weight)
 
     def __str__(self):
-        """Return a readable representation of the adjacency list."""
-        lines = ["City Map Adjacency List:"]
-
-        for node in sorted(self.adjacency_list):
-            neighbors = self.adjacency_list[node]
-
-            if neighbors:
-                formatted_neighbors = ", ".join(
-                    f"{neighbor} ({weight} min)"
-                    for neighbor, weight in neighbors
-                )
-            else:
-                formatted_neighbors = "No outgoing roads"
-
-            lines.append(f"{node} -> {formatted_neighbors}")
-
-        return "\n".join(lines)
+        return "\n".join(
+            f"{node}: {neighbors}"
+            for node, neighbors in self.adjacency_list.items()
+        )
