@@ -1,0 +1,11 @@
+--- Simulation Started ---
+TIME 0.00: CAR CAR-01 dispatched to RIDER RIDER-01
+TIME 2.00: CAR CAR-02 dispatched to RIDER RIDER-02
+TIME 2.00: CAR CAR-01 picked up RIDER RIDER-01
+TIME 3.00: CAR CAR-02 picked up RIDER RIDER-02
+TIME 4.00: CAR CAR-03 dispatched to RIDER RIDER-03
+TIME 5.00: CAR CAR-03 picked up RIDER RIDER-03
+TIME 9.00: CAR CAR-01 dropped off RIDER RIDER-01
+TIME 10.00: CAR CAR-03 dropped off RIDER RIDER-03
+TIME 14.00: CAR CAR-02 dropped off RIDER RIDER-02
+--- Simulation Complete ---

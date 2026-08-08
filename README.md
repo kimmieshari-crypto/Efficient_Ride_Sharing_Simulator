@@ -1,98 +1,61 @@
 # Efficient Ride-Sharing Simulator
 
-## Project Overview
+## Assignment 6.2: Simulation Engine Prototype
 
-This project models the core parts of a ride-sharing system using Python and
-object-oriented programming. Cars and map locations are represented as Python
-objects, while roads are stored in a weighted graph.
+This milestone implements the event-driven simulation engine for the Efficient Ride-Sharing Simulator. It proves that the simulator can process ride requests, dispatch cars, handle pickups, handle dropoffs, and maintain consistent state before the final integration of the Graph, Dijkstra, and Quadtree components.
 
-## Pathfinding with Dijkstra's Algorithm
+## Simulation Engine Prototype
 
-The project uses Dijkstra's shortest-path algorithm to calculate the fastest
-route between two locations in the map.
+The simulation is a **Discrete-Event Simulation**. Instead of updating every car continuously, the simulation jumps from one meaningful event to the next.
 
-The algorithm uses Python's `heapq` module as a min-heap priority queue. Each
-heap entry is a tuple containing:
+### Event Queue
+
+Upcoming events are stored in a Python `heapq` Min-Heap using this tuple structure:
 
 ```python
-(distance_from_start, node)
+(timestamp, sequence_number, event_type, data)
 ```
 
-The node with the smallest known distance is processed first. A `distances`
-dictionary stores the best travel time found for each node, and a
-`predecessors` dictionary records which node came before each node in the
-optimal route. After reaching the destination, the predecessor information is
-used to reconstruct the complete path.
+The timestamp keeps events in chronological order. The sequence number breaks ties when multiple events have the same timestamp.
 
-Dijkstra's algorithm requires all edge weights to be non-negative.
+### Main Event Loop
 
-## Car Route Calculation
+`Simulation.run()` repeatedly pops the earliest event, advances the simulation clock, and sends the event to the correct handler.
 
-The `Car` class includes this method:
+### Placeholder Matching
+
+`find_closest_car_brute_force()` checks every available car and returns the closest one. This is an O(N) placeholder that will later be replaced by the Quadtree.
+
+### Placeholder Navigation
+
+`calculate_travel_time()` uses Manhattan distance:
 
 ```python
-calculate_route(self, destination, graph)
+abs(x1 - x2) + abs(y1 - y2)
 ```
 
-The method starts at the car's current `self.location` and calculates the
-shortest route to the requested destination. It stores the result in:
+Travel time is `distance * TRAVEL_SPEED_FACTOR`. This will later be replaced by graph-based navigation and Dijkstra's algorithm.
 
-- `self.route`: the ordered list of map nodes in the route
-- `self.route_time`: the total travel time for the route
+### State Updates
 
-When no route exists, `self.route` is set to `None` and `self.route_time` is
-set to `float("inf")`.
+At dispatch, `car.assigned_rider` links the car to the rider and the car becomes `en_route_to_pickup`.
 
-## Project Files
+At pickup, `car.location` is updated to `rider.start_location`, the car becomes `en_route_to_destination`, and the rider becomes `in_car`.
 
-- `graph.py` - weighted graph implementation and CSV map loader
-- `car.py` - Car class with integrated route calculation
-- `pathfinding.py` - standalone Dijkstra function
-- `map.csv` - sample weighted map
-- `test_dijkstra.py` - isolated test of the standalone function
-- `test_car_route.py` - demonstration of route calculation through a Car object
+At dropoff, `car.location` is updated to `rider.destination`, the car becomes `available`, the rider becomes `completed`, and `assigned_rider` is cleared.
+
+## Files
+
+- `car.py` — Car model using physical `(x, y)` coordinates.
+- `rider.py` — Rider model.
+- `simulation.py` — Event-driven simulation engine.
+- `video_script.txt` — Suggested 3–5 minute code review script.
+- `sample_output.txt` — Verified example output.
 
 ## How to Run
 
-Open a terminal in the project directory.
-
-Run the standalone pathfinding test:
-
 ```bash
-python test_dijkstra.py
+python3 simulation.py
 ```
 
-Run the integrated Car route test:
-
-```bash
-python test_car_route.py
-```
-
-Expected integrated output includes:
-
-```text
-Calculated route: ['A', 'C', 'B', 'D']
-Calculated route time: 4.0
-Car route test passed successfully.
-```
-
-## Complexity Analysis
-
-Using an adjacency list and a binary min-heap, Dijkstra's algorithm has a time
-complexity of:
-
-```text
-O((V + E) log V)
-```
-
-This is often written as `O(E log V)` for a connected graph.
-
-Its additional space complexity is:
-
-```text
-O(V + E)
-```
-
-The graph requires space for vertices and edges, while the distance,
-predecessor, and priority queue structures require additional space based on
-the number of vertices and queued entries.
+The console will print a chronological event log showing dispatch, pickup, and dropoff events.
