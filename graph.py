@@ -1,62 +1,88 @@
-import csv
-
+import collections
+import heapq
 
 class Graph:
-    """Weighted, directed graph stored as an adjacency-list dictionary."""
+    """City map containing road edges and graph-node coordinates."""
 
     def __init__(self):
-        self.adjacency_list = {}
+        self.adjacency_list = collections.defaultdict(list)
+        self.node_coordinates = {}
 
-    def add_node(self, node):
-        """Add a node if it does not already exist."""
-        if node not in self.adjacency_list:
-            self.adjacency_list[node] = []
-
-    def add_edge(self, start, end, weight):
-        """Add a directed, weighted edge from start to end."""
-        if weight < 0:
-            raise ValueError("Dijkstra's algorithm requires non-negative weights.")
-
-        self.add_node(start)
-        self.add_node(end)
-        self.adjacency_list[start].append((end, float(weight)))
-
-    def get_neighbors(self, node):
-        """Return a list of (neighbor, weight) tuples."""
-        return self.adjacency_list.get(node, [])
-
-    def load_from_file(self, filename):
-        """
-        Load edges from a CSV file.
-
-        Expected row format:
-        start_node,end_node,travel_time
-        """
-        with open(filename, "r", newline="", encoding="utf-8") as csv_file:
-            reader = csv.reader(csv_file)
-
-            for line_number, row in enumerate(reader, start=1):
-                if not row or all(not value.strip() for value in row):
+    def load_map_data(self, filename):
+        with open(filename, "r", encoding="utf-8") as file:
+            for raw_line in file:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
                     continue
 
-                if len(row) != 3:
+                parts = line.split(",")
+                if len(parts) != 7:
                     raise ValueError(
-                        f"Invalid row {line_number}: expected 3 values, received {len(row)}."
+                        f"Expected 7 comma-separated values, got {len(parts)}: {line}"
                     )
 
-                start, end, weight = (value.strip() for value in row)
+                (
+                    start_id,
+                    start_x,
+                    start_y,
+                    end_id,
+                    end_x,
+                    end_y,
+                    weight,
+                ) = parts
 
-                try:
-                    numeric_weight = float(weight)
-                except ValueError as exc:
-                    raise ValueError(
-                        f"Invalid weight on row {line_number}: {weight!r}"
-                    ) from exc
+                self.node_coordinates[start_id] = (float(start_x), float(start_y))
+                self.node_coordinates[end_id] = (float(end_x), float(end_y))
 
-                self.add_edge(start, end, numeric_weight)
+                w = float(weight)
+                self.adjacency_list[start_id].append((end_id, w))
+                self.adjacency_list[end_id].append((start_id, w))
 
-    def __str__(self):
-        return "\n".join(
-            f"{node}: {neighbors}"
-            for node, neighbors in self.adjacency_list.items()
-        )
+
+def find_nearest_vertex(point, node_coordinates):
+    if not node_coordinates:
+        raise ValueError("No graph vertices were loaded.")
+
+    point_x, point_y = point
+    return min(
+        node_coordinates,
+        key=lambda node_id: (
+            node_coordinates[node_id][0] - point_x
+        ) ** 2 + (
+            node_coordinates[node_id][1] - point_y
+        ) ** 2,
+    )
+
+
+def dijkstra(graph, start, goal):
+    if start not in graph.node_coordinates or goal not in graph.node_coordinates:
+        return None, float("inf")
+
+    distances = {start: 0.0}
+    previous = {}
+    heap = [(0.0, start)]
+
+    while heap:
+        current_distance, node = heapq.heappop(heap)
+        if current_distance != distances.get(node):
+            continue
+
+        if node == goal:
+            route = []
+            cursor = goal
+            while True:
+                route.append(cursor)
+                if cursor == start:
+                    break
+                cursor = previous[cursor]
+            route.reverse()
+            return route, current_distance
+
+        for neighbor, weight in graph.adjacency_list.get(node, []):
+            new_distance = current_distance + weight
+            if new_distance < distances.get(neighbor, float("inf")):
+                distances[neighbor] = new_distance
+                previous[neighbor] = node
+                heapq.heappush(heap, (new_distance, neighbor))
+
+    return None, float("inf")
