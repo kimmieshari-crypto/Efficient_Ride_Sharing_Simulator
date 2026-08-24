@@ -220,3 +220,17 @@ For the 3-5 minute demonstration:
 8. Show the correctness test for events sharing the same timestamp.
 9. Open `simulation_summary.png`.
 10. Briefly explain the final metrics and driver utilization formula.
+
+
+## Production Map Scale
+
+The production `city_map.csv` uses a 20x20 road grid with 400 graph nodes. The default fleet remains 100 cars, so vehicles no longer begin on every node. This creates more useful spatial variation for Quadtree candidate selection and Dijkstra comparison while preserving the production default of 100 cars.
+
+## Additional Correctness Tests
+
+The test suite explicitly verifies:
+
+- A single unreachable candidate is skipped while reachable candidates are still considered.
+- An entirely unreachable candidate set is handled consistently.
+- Zero available cars are handled safely at the simulation level.
+- Dijkstra is run for every candidate returned by the Quadtree before the final car is selected.
